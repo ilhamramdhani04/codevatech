@@ -28,6 +28,10 @@
         @endif
     </form>
 
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Kelompok Diagnosis mengatur tab pada halaman diagnosis dan terpisah dari status Sering Terjadi.</p>
+    @error('diagnosis_group')
+        <p role="alert" style="color: var(--danger);">{{ $message }}</p>
+    @enderror
     <div class="table-responsive">
         <table>
             <thead>
@@ -35,6 +39,7 @@
                     <th>No</th>
                     <th>Kode</th>
                     <th>Nama Gejala</th>
+                    <th>Kelompok Diagnosis</th>
                     <th>Status Sering Terjadi (Tab 🔥)</th>
                     @if(auth()->user()->isAdmin())
                         <th>Aksi</th>
@@ -47,6 +52,23 @@
                         <td>{{ $gejalas->firstItem() + $loop->index }}</td>
                         <td><strong style="color: var(--primary);">{{ $gejala->kode_gejala }}</strong></td>
                         <td>{{ $gejala->nama_gejala }}</td>
+                        <td>
+                            @if(auth()->user()->isAdmin())
+                                <form action="{{ panel_route('gejalas.update-group', $gejala) }}" method="POST" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="diagnosis_group" class="form-control" aria-label="Kelompok diagnosis {{ $gejala->kode_gejala }}" style="min-width: 190px;">
+                                        <option value="">Belum dikelompokkan</option>
+                                        @foreach(\App\Models\Gejala::DIAGNOSIS_GROUPS as $value => $label)
+                                            <option value="{{ $value }}" @selected($gejala->diagnosis_group === $value)>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.75rem; font-size: 0.8rem;" aria-label="Simpan kelompok {{ $gejala->kode_gejala }}">Simpan</button>
+                                </form>
+                            @else
+                                {{ \App\Models\Gejala::DIAGNOSIS_GROUPS[$gejala->diagnosis_group] ?? 'Belum dikelompokkan' }}
+                            @endif
+                        </td>
                         <td>
                             @if(auth()->user()->isAdmin())
                                 <form action="{{ panel_route('gejalas.toggle-frequent', $gejala) }}" method="POST" style="display: inline;">
@@ -95,7 +117,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ auth()->user()->isAdmin() ? 5 : 4 }}" style="text-align: center; color: var(--text-muted);">Belum ada data gejala.</td>
+                        <td colspan="{{ auth()->user()->isAdmin() ? 6 : 5 }}" style="text-align: center; color: var(--text-muted);">Belum ada data gejala.</td>
                     </tr>
                 @endforelse
             </tbody>

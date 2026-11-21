@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Gejala;
 use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class GejalaController extends Controller
 {
@@ -39,6 +40,7 @@ class GejalaController extends Controller
             'kode_gejala' => ['required', 'string', 'max:10', 'unique:gejalas,kode_gejala', 'regex:/^G\d+$/'],
             'nama_gejala' => ['required', 'string'],
             'is_frequent' => ['nullable', 'boolean'],
+            'diagnosis_group' => ['nullable', Rule::in(array_keys(Gejala::DIAGNOSIS_GROUPS))],
         ], [
             'kode_gejala.regex' => 'Kode gejala harus diawali huruf G diikuti angka (contoh: G01).',
         ]);
@@ -64,13 +66,14 @@ class GejalaController extends Controller
             'kode_gejala' => ['required', 'string', 'max:10', 'unique:gejalas,kode_gejala,' . $gejala->id, 'regex:/^G\d+$/'],
             'nama_gejala' => ['required', 'string'],
             'is_frequent' => ['nullable', 'boolean'],
+            'diagnosis_group' => ['nullable', Rule::in(array_keys(Gejala::DIAGNOSIS_GROUPS))],
         ], [
             'kode_gejala.regex' => 'Kode gejala harus diawali huruf G diikuti angka (contoh: G01).',
         ]);
 
         $validated['is_frequent'] = $request->has('is_frequent');
 
-        $oldData = $gejala->only(['kode_gejala', 'nama_gejala', 'is_frequent']);
+        $oldData = $gejala->only(['kode_gejala', 'nama_gejala', 'is_frequent', 'diagnosis_group']);
         $gejala->update($validated);
 
         $this->logActivity('updated', $gejala, "Mengubah gejala: {$gejala->kode_gejala}", [
@@ -80,6 +83,23 @@ class GejalaController extends Controller
 
         return redirect(panel_route('gejalas.index'))
                          ->with('success', 'Gejala berhasil diperbarui.');
+    }
+
+    public function updateGroup(Request $request, Gejala $gejala)
+    {
+        $validated = $request->validate([
+            'diagnosis_group' => ['present', 'nullable', Rule::in(array_keys(Gejala::DIAGNOSIS_GROUPS))],
+        ]);
+
+        $oldData = $gejala->only('diagnosis_group');
+        $gejala->update($validated);
+
+        $this->logActivity('updated', $gejala, "Mengubah kelompok diagnosis gejala: {$gejala->kode_gejala}", [
+            'before' => $oldData,
+            'after' => $validated,
+        ]);
+
+        return back()->with('success', "Kelompok gejala {$gejala->kode_gejala} berhasil diperbarui.");
     }
 
     public function toggleFrequent(Gejala $gejala)

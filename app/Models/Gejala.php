@@ -11,9 +11,17 @@ class Gejala extends Model
 {
     use SoftDeletes;
 
+    public const DIAGNOSIS_GROUPS = [
+        'power' => '⚡ Daya & Baterai',
+        'display' => '🖥️ Layar & Tampilan',
+        'performance' => '⚙️ Performa & Hardware',
+        'input' => '⌨️ Input & Perangkat',
+        'system' => '🔒 Sistem, Firmware & AI',
+    ];
+
     protected $table = 'gejalas';
 
-    protected $fillable = ['kode_gejala', 'nama_gejala', 'is_frequent'];
+    protected $fillable = ['kode_gejala', 'nama_gejala', 'is_frequent', 'diagnosis_group'];
 
     protected $casts = [
         'is_frequent' => 'boolean',

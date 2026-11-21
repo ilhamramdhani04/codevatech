@@ -25,6 +25,7 @@
                 <div style="color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem;">{{ $message }}</div>
             @enderror
         </div>
+        @include('admin.gejalas._diagnosis-group')
         <div class="form-group" style="margin-top: 1rem; margin-bottom: 1.5rem;">
             <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: var(--text-main); font-weight: 600;">
                 <input type="checkbox" name="is_frequent" value="1" {{ old('is_frequent') ? 'checked' : '' }} style="width: 1.15rem; height: 1.15rem; accent-color: var(--primary);">

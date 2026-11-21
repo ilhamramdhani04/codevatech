@@ -123,6 +123,7 @@ Route::prefix('admin')->name('admin.')->middleware(['admin', 'role:admin'])->gro
     Route::get('/gejalas/{gejala}/edit', [GejalaController::class, 'edit'])->name('gejalas.edit');
     Route::put('/gejalas/{gejala}', [GejalaController::class, 'update'])->name('gejalas.update');
     Route::patch('/gejalas/{gejala}/toggle-frequent', [GejalaController::class, 'toggleFrequent'])->name('gejalas.toggle-frequent');
+    Route::patch('/gejalas/{gejala}/group', [GejalaController::class, 'updateGroup'])->name('gejalas.update-group');
     Route::delete('/gejalas/{gejala}', [GejalaController::class, 'destroy'])->name('gejalas.destroy');
 
     // Kerusakan Mutations

@@ -480,46 +480,23 @@
                     <button type="button" class="gejala-tab-item" data-category="all">
                         🌐 Semua Gejala <span class="gejala-tab-badge" id="badge-all">0</span>
                     </button>
-                    <button type="button" class="gejala-tab-item" data-category="power">
-                        ⚡ Daya & Baterai <span class="gejala-tab-badge" id="badge-power">0</span>
-                    </button>
-                    <button type="button" class="gejala-tab-item" data-category="display">
-                        🖥️ Layar & Tampilan <span class="gejala-tab-badge" id="badge-display">0</span>
-                    </button>
-                    <button type="button" class="gejala-tab-item" data-category="performance">
-                        ⚙️ Performa & Hardware <span class="gejala-tab-badge" id="badge-performance">0</span>
-                    </button>
-                    <button type="button" class="gejala-tab-item" data-category="input">
-                        ⌨️ Input & Perangkat <span class="gejala-tab-badge" id="badge-input">0</span>
-                    </button>
-                    <button type="button" class="gejala-tab-item" data-category="system">
-                        🔒 Sistem, Firmware & AI <span class="gejala-tab-badge" id="badge-system">0</span>
-                    </button>
+                    @foreach(\App\Models\Gejala::DIAGNOSIS_GROUPS as $value => $label)
+                        <button type="button" class="gejala-tab-item" data-category="{{ $value }}">
+                            {{ $label }} <span class="gejala-tab-badge" id="badge-{{ $value }}">0</span>
+                        </button>
+                    @endforeach
                 </div>
             </div>
             <button type="button" class="tab-scroll-btn" id="scrollTabsRight" title="Geser Kanan">▶</button>
         </div>
     </div>
 
-    @php
-        $frequentCodes = $frequentCodes ?? ['G01', 'G02', 'G03', 'G09', 'G10', 'G13', 'G15', 'G16', 'G21', 'G30', 'G54', 'G61'];
-        $powerCodes = ['G01', 'G02', 'G03', 'G04', 'G15', 'G16', 'G17', 'G18', 'G19', 'G20', 'G56', 'G63', 'G64'];
-        $displayCodes = ['G05', 'G06', 'G07', 'G08', 'G57', 'G58'];
-        $perfCodes = ['G09', 'G10', 'G11', 'G12', 'G13', 'G14', 'G30', 'G38', 'G39', 'G42', 'G65', 'G66'];
-        $inputCodes = ['G21', 'G22', 'G23', 'G24', 'G25', 'G26', 'G27', 'G28', 'G29', 'G43', 'G44', 'G45', 'G46', 'G47', 'G52', 'G53'];
-        $systemCodes = ['G31', 'G32', 'G33', 'G34', 'G35', 'G36', 'G37', 'G40', 'G41', 'G48', 'G49', 'G50', 'G51', 'G54', 'G55', 'G59', 'G60', 'G61', 'G62'];
-    @endphp
-
     <div class="gejala-grid" id="gejalaList">
         @foreach($gejalas as $gejala)
             @php
                 $cats = ['all'];
-                if (in_array($gejala->kode_gejala, $frequentCodes)) $cats[] = 'frequent';
-                if (in_array($gejala->kode_gejala, $powerCodes)) $cats[] = 'power';
-                if (in_array($gejala->kode_gejala, $displayCodes)) $cats[] = 'display';
-                if (in_array($gejala->kode_gejala, $perfCodes)) $cats[] = 'performance';
-                if (in_array($gejala->kode_gejala, $inputCodes)) $cats[] = 'input';
-                if (in_array($gejala->kode_gejala, $systemCodes)) $cats[] = 'system';
+                if ($gejala->is_frequent) $cats[] = 'frequent';
+                if (isset(\App\Models\Gejala::DIAGNOSIS_GROUPS[$gejala->diagnosis_group])) $cats[] = $gejala->diagnosis_group;
                 $catAttr = implode(' ', $cats);
             @endphp
             <label class="gejala-item" data-categories="{{ $catAttr }}" data-text="{{ strtolower($gejala->kode_gejala . ' ' . $gejala->nama_gejala) }}">
@@ -623,15 +600,9 @@
             const checkedCheckboxes = document.querySelectorAll('.gejala-checkbox:checked');
             selectedCount.textContent = checkedCheckboxes.length;
 
-            const counts = {
-                frequent: 0,
-                all: 0,
-                power: 0,
-                display: 0,
-                performance: 0,
-                input: 0,
-                system: 0
-            };
+            const counts = Object.fromEntries(
+                Array.from(document.querySelectorAll('.gejala-tab-item'), tab => [tab.dataset.category, 0])
+            );
 
             checkedCheckboxes.forEach(cb => {
                 const item = cb.closest('.gejala-item');

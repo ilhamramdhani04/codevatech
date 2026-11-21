@@ -33,6 +33,10 @@ try {
         throw new RuntimeException('Imported database is missing gejalas.is_frequent; inspect migrations before updating its schema.');
     }
 
+    if (! Schema::hasColumn('gejalas', 'diagnosis_group')) {
+        throw new RuntimeException('Database is missing gejalas.diagnosis_group; apply the reviewed diagnosis group migration before activating this release.');
+    }
+
     if (config('session.driver') === 'database' && ! Schema::hasTable('sessions')) {
         throw new RuntimeException('Database sessions require the sessions table.');
     }

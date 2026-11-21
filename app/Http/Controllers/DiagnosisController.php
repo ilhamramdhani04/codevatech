@@ -35,7 +35,6 @@ class DiagnosisController extends Controller
         }
 
         $gejalas       = Gejala::orderBy('kode_gejala')->get();
-        $frequentCodes = Gejala::where('is_frequent', true)->pluck('kode_gejala')->toArray();
         $brands        = Brand::with(['laptopModels' => fn($q) => $q->orderBy('nama_model')])
                               ->orderBy('nama_brand')
                               ->get();
@@ -53,7 +52,7 @@ class DiagnosisController extends Controller
             ];
         });
 
-        return view('guest.diagnosis.index', compact('gejalas', 'frequentCodes', 'brands', 'modelsByBrand'));
+        return view('guest.diagnosis.index', compact('gejalas', 'brands', 'modelsByBrand'));
     }
 
     /**

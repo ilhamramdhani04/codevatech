@@ -65,9 +65,23 @@ Domain/subdomain harus melayani **`current/public/`**. Sesuaikan document root a
 
 Isi `DB_CONNECTION=mysql`, host, nama database, username, dan password yang diberikan Hostinger pada `shared/.env`. Gunakan `APP_ENV=production`, `APP_DEBUG=false`, dan APP_KEY yang stabil. Untuk kebutuhan aplikasi saat ini, `QUEUE_CONNECTION=sync`, `SESSION_DRIVER=file`, dan `CACHE_STORE=file` dapat digunakan tanpa worker atau tabel infrastruktur tambahan. File session dan cache berada di storage bersama.
 
-Script `scripts/hostinger-preflight.php` membaca koneksi dan struktur database untuk memastikan tabel aplikasi serta kolom `gejalas.is_frequent` tersedia. Jika session/cache menggunakan database, tabel terkait juga diperiksa. Error koneksi tidak dicetak lengkap ke log CI.
+Script `scripts/hostinger-preflight.php` membaca koneksi dan struktur database untuk memastikan tabel aplikasi serta kolom `gejalas.is_frequent` dan `gejalas.diagnosis_group` tersedia. Jika session/cache menggunakan database, tabel terkait juga diperiksa. Error koneksi tidak dicetak lengkap ke log CI.
 
 Deployment **tidak menjalankan migrasi, seeder, import database, atau reset data**. Pada database hasil impor, periksa `php artisan migrate:status` dan struktur aktual sebelum memutuskan migrasi apa yang diperlukan. Mengubah skema sebaiknya dilakukan setelah backup dan peninjauan terpisah. Jangan menjalankan `migrate:fresh` atau seeder akun demo pada database production.
+
+### Pengaturan kelompok gejala
+
+Migration `2026_11_21_000001_add_diagnosis_group_to_gejalas_table.php` menambah satu kolom nullable `diagnosis_group` pada tabel `gejalas`, tanpa tabel atau relasi baru. Nilainya `power`, `display`, `performance`, `input`, atau `system`; nilai kosong berarti belum dikelompokkan. Penanda `is_frequent` tetap independen. Tab Semua Gejala selalu memuat semua gejala aktif.
+
+Migration mengisi pembagian gejala lama sesuai tab sebelumnya, termasuk gejala yang sudah soft delete, tanpa mengganti ID, nama, timestamp, penanda sering terjadi, rule, atau riwayat. Kode gejala tambahan yang tidak termasuk pembagian lama tetap belum dikelompokkan dan dapat diatur admin. Seeder hanya diperlukan untuk instalasi baru, bukan upgrade production.
+
+Untuk upgrade, buat backup tabel `gejalas` beserta struktur dan catatan migrasi di luar folder publik dengan izin privat. Jalankan migration ini secara khusus sebelum mengaktifkan release baru; kode lama tetap kompatibel dengan tambahan kolom. Jika memakai artisan dari release aktif, unggah file migration yang sudah diuji ke lokasi privat dan jalankan:
+
+```bash
+php artisan migrate --force --no-interaction --realpath --path=/path/private/2026_11_21_000001_add_diagnosis_group_to_gejalas_table.php
+```
+
+Sesudahnya verifikasi pembagian kelompok dan data lama, lalu deploy melalui workflow biasa. Admin dapat memilih Kelompok Diagnosis dan menekan Simpan di Master Data Gejala, atau mengaturnya melalui form tambah/edit. Teknisi hanya dapat melihat pengelompokan. Mengubah kelompok tidak mengubah rule Forward Chaining.
 
 ## Aktivasi dan pemulihan
 
