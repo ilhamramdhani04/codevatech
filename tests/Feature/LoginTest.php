@@ -15,7 +15,7 @@ class LoginTest extends TestCase
         $response = $this->get('/admin/login');
 
         $response->assertStatus(200);
-        $response->assertSee('DiagnoLap');
+        $response->assertSee('CODEVA TECH');
     }
 
     public function test_admin_can_login_with_correct_credentials(): void
@@ -32,6 +32,23 @@ class LoginTest extends TestCase
         ]);
 
         $response->assertRedirect('/admin');
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_teknisi_is_redirected_to_teknisi_portal_after_login(): void
+    {
+        $user = User::factory()->create([
+            'email'    => 'teknisi@diagnolap.com',
+            'password' => bcrypt('password123'),
+            'role'     => 'teknisi',
+        ]);
+
+        $response = $this->post('/admin/login', [
+            'email'    => 'teknisi@diagnolap.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect('/teknisi');
         $this->assertAuthenticatedAs($user);
     }
 

@@ -43,13 +43,21 @@ class UserManagementTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_teknisi_can_access_admin_dashboard_and_riwayat(): void
+    public function test_teknisi_can_access_teknisi_dashboard_and_riwayat(): void
     {
-        $response = $this->actingAs($this->teknisi)->get('/admin');
+        $response = $this->actingAs($this->teknisi)->get('/teknisi');
         $response->assertStatus(200);
 
-        $responseRiwayat = $this->actingAs($this->teknisi)->get('/admin/riwayat');
+        $responseRiwayat = $this->actingAs($this->teknisi)->get('/teknisi/riwayat');
         $responseRiwayat->assertStatus(200);
+    }
+
+    public function test_teknisi_cannot_access_admin_dashboard_and_riwayat(): void
+    {
+        $this->actingAs($this->teknisi);
+
+        $this->get('/admin')->assertForbidden();
+        $this->get('/admin/riwayat')->assertForbidden();
     }
 
     public function test_super_admin_can_create_new_teknisi_user(): void

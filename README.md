@@ -128,7 +128,19 @@ php artisan test
 
 Konfigurasi di `phpunit.xml` menggunakan SQLite `:memory:`. Pengujian mencakup login, otorisasi, pengelolaan pengguna/kategori, alur diagnosis, dan akses laporan PDF. Endpoint cetak serta ekspor CSV saat ini dinonaktifkan (HTTP 403).
 
-Status verifikasi saat persiapan repository: build frontend berhasil; 17 test lolos dan 5 test gagal. Test yang gagal masih mengharapkan akses teknisi melalui `/admin`, fitur cetak/CSV yang dinonaktifkan, serta teks `DiagnoLap` pada halaman login yang kini memakai nama CODEVA TECH. Suite test perlu disesuaikan dengan perilaku tersebut.
+Status verifikasi terbaru: **26 test lolos, 70 assertion, 0 gagal** dengan `php artisan test --compact` (PHP 8.2, SQLite in-memory). Build frontend juga berhasil saat persiapan repository.
+
+Lima kegagalan sebelumnya diperbaiki dengan menyesuaikan test terhadap perilaku aplikasi:
+
+| Test sebelumnya | Perbaikan dan hasil yang diperiksa |
+| --- | --- |
+| Cetak riwayat admin/teknisi | Memastikan HTTP 403 melalui portal masing-masing karena fitur dinonaktifkan |
+| Ekspor CSV | Memastikan HTTP 403 untuk admin dan teknisi melalui portal masing-masing |
+| Unduh PDF teknisi | Menggunakan `/teknisi/riwayat/{id}/pdf`, memeriksa HTTP 200, tipe konten, nama unduhan, dan signature `%PDF-` |
+| Halaman login | Memeriksa nama CODEVA TECH yang ditampilkan saat ini |
+| Dashboard dan riwayat teknisi | Menggunakan `/teknisi` dan `/teknisi/riwayat` |
+
+Empat test tambahan memeriksa redirect login teknisi ke portalnya, larangan akses teknisi ke dashboard/riwayat admin, larangan unduh PDF oleh admin, dan redirect tamu ke login saat mencoba unduh PDF. Perbaikan ini mengubah test dan dokumentasi; aturan akses serta fitur aplikasi tetap sama.
 
 ## Struktur project
 
