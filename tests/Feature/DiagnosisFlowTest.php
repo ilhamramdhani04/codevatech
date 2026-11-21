@@ -36,7 +36,7 @@ class DiagnosisFlowTest extends TestCase
         $response->assertRedirect('/diagnosis')->assertSessionHasErrors('gejala_ids');
         $this->assertDatabaseCount('diagnosis_histories', 0);
         $this->get('/diagnosis')->assertOk()
-            ->assertSee('window.alert("Pilih minimal satu gejala untuk melakukan diagnosis.")', false);
+            ->assertSee('showSymptomAlert("Pilih minimal satu gejala untuk melakukan diagnosis.")', false);
     }
 
     public static function emptySymptomSubmissions(): array

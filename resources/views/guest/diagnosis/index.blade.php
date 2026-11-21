@@ -3,7 +3,38 @@
 @section('title', 'Form Diagnosis Digital — DiagnoLap Laptop Service')
 
 @section('content')
+<link rel="stylesheet" href="{{ asset('css/sweetalert2.min.css') }}">
+<script src="{{ asset('js/sweetalert2.all.min.js') }}" defer></script>
 <style>
+    .diagnosis-validation-popup {
+        background: #131b2e !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 0.875rem !important;
+        color: #f8fafc !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6) !important;
+    }
+    .diagnosis-validation-popup .swal2-title {
+        color: #f8fafc !important;
+        font-size: 1.2rem !important;
+        font-weight: 700 !important;
+    }
+    .diagnosis-validation-popup .swal2-html-container {
+        color: #94a3b8 !important;
+        font-size: 0.9rem !important;
+    }
+    .diagnosis-validation-popup .swal2-icon.swal2-warning {
+        border-color: #f59e0b !important;
+        color: #f59e0b !important;
+    }
+    .diagnosis-validation-popup .swal2-confirm {
+        background: #f43f5e !important;
+        border-radius: 0.5rem !important;
+        font-weight: 700 !important;
+        padding: 0.55rem 1.4rem !important;
+        font-size: 0.875rem !important;
+    }
+
     .diagnosis-header {
         margin-bottom: 2.5rem;
     }
@@ -530,10 +561,49 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const diagnosisForm = document.getElementById('diagnosisForm');
+        function showSymptomAlert(message) {
+            if (typeof Swal === 'undefined') {
+                window.alert(message);
+                return;
+            }
+
+            const viewport = window.visualViewport;
+            const fitPopupToViewport = () => {
+                const container = Swal.getContainer();
+                if (!viewport || !container) return;
+
+                Object.assign(container.style, {
+                    left: `${viewport.offsetLeft}px`,
+                    top: `${viewport.offsetTop}px`,
+                    width: `${viewport.width}px`,
+                    height: `${viewport.height}px`
+                });
+            };
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pilih Gejala Terlebih Dahulu',
+                text: message,
+                position: 'center',
+                confirmButtonText: 'Mengerti',
+                customClass: { popup: 'diagnosis-validation-popup' },
+                heightAuto: false,
+                didOpen: () => {
+                    fitPopupToViewport();
+                    viewport?.addEventListener('resize', fitPopupToViewport);
+                    viewport?.addEventListener('scroll', fitPopupToViewport);
+                },
+                didDestroy: () => {
+                    viewport?.removeEventListener('resize', fitPopupToViewport);
+                    viewport?.removeEventListener('scroll', fitPopupToViewport);
+                }
+            });
+        }
+
         diagnosisForm.addEventListener('submit', function(event) {
             if (!diagnosisForm.querySelector('.gejala-checkbox:checked')) {
                 event.preventDefault();
-                window.alert('Pilih minimal satu gejala untuk melakukan diagnosis.');
+                showSymptomAlert('Pilih minimal satu gejala untuk melakukan diagnosis.');
             }
         });
 
@@ -720,7 +790,7 @@
         updateLaptopDisplay();
 
         @if($errors->has('gejala_ids'))
-            window.alert(@json($errors->first('gejala_ids')));
+            showSymptomAlert(@json($errors->first('gejala_ids')));
         @endif
     });
 </script>
