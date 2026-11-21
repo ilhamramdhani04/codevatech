@@ -1,0 +1,122 @@
+name: Test, build, and deploy to Hostinger
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Test Laravel and build release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, pdo_mysql, gd
+          tools: composer:v2
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Prepare test environment
+        run: cp .env.example .env
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Generate test key
+        run: php artisan key:generate --ansi
+
+      - name: Run all tests
+        run: php artisan test --compact
+
+      - name: Build frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Check deployment scripts
+        run: |
+          for script in scripts/deploy-hostinger.sh scripts/deploy-hostinger-ssh.sh tests/Deployment/hostinger.sh; do
+            bash -n "$script"
+          done
+          bash tests/Deployment/hostinger.sh
+
+      - name: Prepare production dependencies
+        if: github.event_name != 'pull_request'
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+
+      - name: Package tracked source and built dependencies
+        if: github.event_name != 'pull_request'
+        run: |
+          release_dir="$RUNNER_TEMP/codevatech-release"
+          mkdir -p "$release_dir"
+          git archive HEAD | tar -x -C "$release_dir"
+          cp -a vendor "$release_dir/vendor"
+          cp -a public/build "$release_dir/public/build"
+          tar -czf "$RUNNER_TEMP/codevatech.tar.gz" -C "$release_dir" .
+
+      - name: Upload release
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: codevatech-${{ github.sha }}
+          path: ${{ runner.temp }}/codevatech.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy release over SSH
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.HOSTINGER_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    concurrency:
+      group: hostinger-production
+      cancel-in-progress: false
+    env:
+      SSH_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+      SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+      SSH_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+      SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
+      DEPLOY_ROOT: ${{ vars.HOSTINGER_DEPLOY_ROOT }}
+      PHP_BIN: ${{ vars.HOSTINGER_PHP_BIN || 'php' }}
+      APP_URL: ${{ vars.HOSTINGER_APP_URL }}
+      RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Download tested release
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: codevatech-${{ github.sha }}
+          path: ${{ runner.temp }}/hostinger-release
+
+      - name: Upload and activate release
+        run: bash scripts/deploy-hostinger-ssh.sh "$RUNNER_TEMP/hostinger-release/codevatech.tar.gz"
+
+      - name: Check public endpoints
+        run: |
+          for path in /up / /admin/login /diagnosis; do
+            curl --proto '=https' --tlsv1.2 --fail --silent --show-error --retry 2 --output /dev/null "${APP_URL%/}$path"
+          done

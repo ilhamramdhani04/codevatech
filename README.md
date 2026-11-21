@@ -173,6 +173,8 @@ Dokumen kebutuhan dan rancangan dapat memuat rencana pengembangan. Perilaku apli
 
 ## Deployment
 
+Untuk CI/CD GitHub Actions ke Hostinger melalui SSH, lihat [panduan deployment Hostinger](docs/hostinger-deployment.md). Workflow menjalankan test dan build sebelum deployment; deployment ke server tetap nonaktif sampai `HOSTINGER_DEPLOY_ENABLED=true` dan koneksi server dikonfigurasi. Database hasil impor tidak dimigrasi atau di-seed otomatis.
+
 Siapkan `.env` khusus server dengan `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`, application key, dan koneksi database yang sesuai. Web server harus mengarah ke `public/`.
 
 Script [`deploy.sh`](deploy.sh) disediakan untuk pembaruan deployment Linux yang sudah disiapkan. Script menarik branch `main`, memasang dependency PHP, membangun cache, menjalankan migrasi, dan membangun aset jika npm tersedia. Backup database terlebih dahulu. Jika script berhenti saat maintenance, selesaikan error lalu jalankan `php artisan up`.
