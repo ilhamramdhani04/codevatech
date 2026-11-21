@@ -54,6 +54,7 @@ mkdir -p "$deploy_root/shared/storage/framework/cache/data"
 mkdir -p "$deploy_root/shared/storage/framework/sessions"
 mkdir -p "$deploy_root/shared/storage/framework/views" "$deploy_root/shared/storage/logs"
 touch "$deploy_root/.codevatech-deploy-root"
+chmod o+x "$(dirname "$deploy_root")" "$deploy_root" "$deploy_root/releases"
 ```
 
 Jika ada aplikasi sebelumnya, pertahankan APP_KEY dan data storage yang masih digunakan. Script tidak mengganti APP_KEY atau mengunggah `.env` dari CI. Setelah `.env` dipasang, batasi izin bacanya ke akun hosting.

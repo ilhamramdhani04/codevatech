@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Activate a tested release without changing the imported database or its APP_KEY.
 set -Eeuo pipefail
-umask 027
+# Hostinger's web server needs traversal and read access to public release files.
+# The shared environment retains its separately configured private permissions.
+umask 022
 
 archive=${1:?Release archive is required}
 deploy_root=${2:?Deployment root is required}
@@ -19,6 +21,7 @@ account_home=$(realpath -e -- "$HOME")
 [[ -f $deploy_root/shared/.env && -d $deploy_root/shared/storage ]] || fail 'Shared production environment and storage must be prepared first.'
 [[ ! -L $deploy_root/releases && ! -L $deploy_root/shared ]] || fail 'Deployment directories must not be symlinks.'
 mkdir -p -- "$deploy_root/releases"
+chmod o+x -- "$deploy_root" "$deploy_root/releases"
 [[ ! -e $deploy_root/current || -L $deploy_root/current ]] || fail 'Refusing to replace an existing non-symlink current directory.'
 command -v "$php_bin" >/dev/null || fail 'PHP CLI is unavailable.'
 command -v flock >/dev/null || fail 'The hosting account must support flock.'
