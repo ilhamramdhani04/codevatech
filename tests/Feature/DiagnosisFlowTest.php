@@ -7,7 +7,9 @@ use App\Models\Kategori;
 use App\Models\Kerusakan;
 use App\Models\Rule;
 use App\Models\RuleGejala;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class DiagnosisFlowTest extends TestCase
@@ -20,6 +22,31 @@ class DiagnosisFlowTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('DiagnoLap');
+    }
+
+    #[DataProvider('emptySymptomSubmissions')]
+    public function test_empty_diagnosis_shows_validation_alert_without_saving_history(string $role, array $payload): void
+    {
+        if ($role === 'teknisi') {
+            $this->actingAs(User::factory()->create(['role' => 'teknisi']));
+        }
+
+        $response = $this->from('/diagnosis')->post('/diagnosis', $payload);
+
+        $response->assertRedirect('/diagnosis')->assertSessionHasErrors('gejala_ids');
+        $this->assertDatabaseCount('diagnosis_histories', 0);
+        $this->get('/diagnosis')->assertOk()
+            ->assertSee('window.alert("Pilih minimal satu gejala untuk melakukan diagnosis.")', false);
+    }
+
+    public static function emptySymptomSubmissions(): array
+    {
+        return [
+            'guest without symptoms' => ['guest', []],
+            'guest with empty symptoms' => ['guest', ['gejala_ids' => []]],
+            'teknisi without symptoms' => ['teknisi', []],
+            'teknisi with empty symptoms' => ['teknisi', ['gejala_ids' => []]],
+        ];
     }
 
     public function test_diagnosis_process_returns_result(): void

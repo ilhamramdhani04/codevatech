@@ -529,6 +529,14 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const diagnosisForm = document.getElementById('diagnosisForm');
+        diagnosisForm.addEventListener('submit', function(event) {
+            if (!diagnosisForm.querySelector('.gejala-checkbox:checked')) {
+                event.preventDefault();
+                window.alert('Pilih minimal satu gejala untuk melakukan diagnosis.');
+            }
+        });
+
         const checkboxes = document.querySelectorAll('.gejala-checkbox');
         const selectedCount = document.getElementById('selectedCount');
         const searchInput = document.getElementById('searchGejala');
@@ -710,6 +718,10 @@
         }
 
         updateLaptopDisplay();
+
+        @if($errors->has('gejala_ids'))
+            window.alert(@json($errors->first('gejala_ids')));
+        @endif
     });
 </script>
 @endsection
