@@ -690,6 +690,300 @@
         .process-timeline { grid-template-columns: 1fr 1fr; }
         .section { padding: 4rem 0; }
     }
+
+    /* Home-page mobile layout and touch-device rendering budget. */
+    @media (max-width: 900px) {
+        html {
+            scroll-behavior: auto;
+            scroll-padding-top: 5rem;
+        }
+
+        header {
+            background-color: var(--bg-body);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        .nav-links {
+            max-height: calc(100dvh - 5rem);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        .simple-service-card {
+            height: auto;
+            min-height: 190px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 80px;
+            gap: 1rem;
+            align-content: space-between;
+        }
+
+        .simple-card-title {
+            grid-column: 1;
+            grid-row: 1;
+            max-width: none;
+            overflow-wrap: break-word;
+        }
+
+        .simple-card-link {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .simple-card-graphic {
+            position: static;
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            align-self: center;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1;
+        }
+
+        .simple-card-graphic svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .why-grid,
+        .diag-feature-wrap,
+        .contact-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .why-grid > *,
+        .diag-feature-wrap > *,
+        .contact-grid > *,
+        .flow-step-text,
+        .location-detail-text {
+            min-width: 0;
+        }
+
+        .diag-feature-wrap {
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        .diag-feature-content .btn {
+            max-width: 100%;
+            white-space: normal;
+            text-align: center;
+        }
+
+        .contact-info-card {
+            padding: 2rem;
+        }
+
+        .location-detail-text {
+            overflow-wrap: anywhere;
+        }
+
+        .map-frame-container {
+            height: 360px;
+            min-height: 0;
+            box-shadow: none;
+        }
+
+        .map-frame-container iframe {
+            display: block;
+            height: 100%;
+            min-height: 0;
+            filter: none;
+            transition: none;
+        }
+
+        .map-badge-overlay {
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+            padding: 1rem;
+            background: var(--bg-surface);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            box-shadow: none;
+        }
+
+        .map-badge-text {
+            min-width: 0;
+            align-items: flex-start;
+            line-height: 1.5;
+        }
+
+        .map-badge-text > span:first-child {
+            flex-shrink: 0;
+        }
+
+        .map-badge-btn {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .hero-title,
+        .hero-desc,
+        .hero-actions {
+            animation: none;
+            opacity: 1;
+            filter: none;
+            will-change: auto;
+        }
+
+        .hero-bg-image-wrap img {
+            transform: none;
+            transition: none;
+        }
+
+        .btn-hero-secondary {
+            background-color: var(--bg-surface);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+
+        /* Override the stagger selectors as well as individual reveals. */
+        .reveal-up,
+        .reveal-left,
+        .reveal-right,
+        .reveal-stagger > * {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+            will-change: auto;
+        }
+
+        .simple-service-card,
+        .simple-card-link svg,
+        .simple-card-graphic {
+            transition: none;
+        }
+
+        .simple-service-card:hover,
+        .simple-service-card:hover .simple-card-link svg,
+        .simple-service-card:hover .simple-card-graphic {
+            transform: none;
+            box-shadow: none;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .navbar {
+            padding: 0.75rem 1.25rem;
+            gap: 0.75rem;
+        }
+
+        .brand {
+            font-size: 1.15rem;
+            white-space: nowrap;
+        }
+
+        .brand img {
+            flex-shrink: 0;
+        }
+
+        .nav-toggle {
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .hero-section {
+            min-height: 540px;
+        }
+
+        .hero-container-overlay {
+            padding: 3.5rem 1.25rem;
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 8.5vw, 2.35rem);
+        }
+
+        .hero-desc {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .hero-actions {
+            flex-direction: column;
+            align-items: stretch;
+            max-width: 320px;
+            margin: 0 auto;
+            gap: 0.75rem;
+        }
+
+        .hero-actions .btn,
+        .contact-actions .btn {
+            min-width: 0;
+            white-space: normal;
+            text-align: center;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+        }
+
+        .section-title,
+        .why-editorial h2 {
+            font-size: 1.85rem;
+        }
+
+        .simple-service-card {
+            grid-template-columns: minmax(0, 1fr) clamp(48px, 14vw, 72px);
+            min-height: 180px;
+            padding: 1.25rem;
+            border-radius: 16px;
+        }
+
+        .simple-card-title {
+            font-size: 1.4rem;
+        }
+
+        .why-point-item {
+            gap: 0.75rem;
+        }
+
+        .diag-feature-wrap {
+            padding: 1.25rem;
+        }
+
+        .diag-feature-content h3 {
+            font-size: 1.65rem;
+        }
+
+        .flow-step-card {
+            padding: 1rem;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .contact-info-card {
+            padding: 1.25rem;
+        }
+
+        .location-detail-item {
+            gap: 0.75rem;
+        }
+
+        .contact-actions {
+            flex-direction: column;
+        }
+
+        .map-badge-overlay {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.75rem;
+        }
+
+        .footer-contact-item > span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+    }
 </style>
 
 <!-- 1. HERO SECTION -->
@@ -922,7 +1216,7 @@
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <div class="contact-actions" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                     @if(auth()->check() && auth()->user()->isAdmin())
                         <a href="{{ route('admin.dashboard') }}" class="btn btn-primary" style="flex: 1;">📊 Ke Dashboard Admin</a>
                     @else
@@ -974,15 +1268,27 @@
             });
         }, observerOptions);
 
-        document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-stagger').forEach(el => {
-            scrollObserver.observe(el);
-        });
+        const revealElements = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-stagger');
+        const desktopViewport = window.matchMedia('(min-width: 901px)');
+        function updateRevealMode() {
+            scrollObserver.disconnect();
+            revealElements.forEach(el => {
+                if (desktopViewport.matches) {
+                    scrollObserver.observe(el);
+                } else {
+                    el.classList.add('is-visible');
+                }
+            });
+        }
+        updateRevealMode();
+        desktopViewport.addEventListener('change', updateRevealMode);
 
         // Parallax hero effect
         const heroVisual = document.getElementById('heroVisual');
         if (heroVisual) {
             const heroImg = heroVisual.querySelector('img');
-            document.addEventListener('mousemove', (e) => {
+            const desktopPointer = window.matchMedia('(min-width: 901px) and (hover: hover) and (pointer: fine)');
+            function moveHero(e) {
                 const { clientX, clientY } = e;
                 const { innerWidth, innerHeight } = window;
                 const x = (clientX / innerWidth - 0.5) * 12;
@@ -990,7 +1296,17 @@
                 if (heroImg) {
                     heroImg.style.transform = `scale(1.05) translate(${x}px, ${y}px)`;
                 }
-            });
+            }
+            function updateParallaxMode() {
+                document.removeEventListener('mousemove', moveHero);
+                if (desktopPointer.matches) {
+                    document.addEventListener('mousemove', moveHero);
+                } else if (heroImg) {
+                    heroImg.style.removeProperty('transform');
+                }
+            }
+            updateParallaxMode();
+            desktopPointer.addEventListener('change', updateParallaxMode);
         }
     });
 </script>

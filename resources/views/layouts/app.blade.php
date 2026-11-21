@@ -342,7 +342,7 @@
                 <span>CODEVA <span>TECH</span></span>
             </a>
 
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-controls="navMenu" aria-expanded="false">
                 <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
 
@@ -451,8 +451,25 @@
             const navToggle = document.getElementById('navToggle');
             const navMenu = document.getElementById('navMenu');
             if (navToggle && navMenu) {
+                const mobileNavigation = window.matchMedia('(max-width: 900px)');
+                function closeNavigation() {
+                    navMenu.classList.remove('show');
+                    navToggle.setAttribute('aria-expanded', 'false');
+                }
                 navToggle.addEventListener('click', function() {
-                    navMenu.classList.toggle('show');
+                    const expanded = navMenu.classList.toggle('show');
+                    navToggle.setAttribute('aria-expanded', String(expanded));
+                });
+                navMenu.addEventListener('click', function(event) {
+                    if (mobileNavigation.matches && event.target.closest('a')) {
+                        closeNavigation();
+                    }
+                });
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') closeNavigation();
+                });
+                mobileNavigation.addEventListener('change', function() {
+                    if (!mobileNavigation.matches) closeNavigation();
                 });
             }
         });
