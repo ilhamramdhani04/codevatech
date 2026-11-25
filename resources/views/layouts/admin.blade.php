@@ -388,10 +388,12 @@
             background: rgba(0, 0, 0, 0.55);
             z-index: 150;
             opacity: 0;
+            pointer-events: none;
             transition: opacity var(--transition-speed) ease;
         }
         .sidebar-overlay.active {
             opacity: 1;
+            pointer-events: auto;
         }
 
         /* ============================

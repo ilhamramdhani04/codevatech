@@ -11,6 +11,7 @@
         flex-wrap: wrap;
         gap: 1rem;
         margin-bottom: 2rem;
+        scroll-margin-top: 6rem;
     }
 
     /* Brand Cards Grid (Default Overview View) */
@@ -22,6 +23,8 @@
     }
 
     .brand-select-card {
+        text-decoration: none;
+        color: inherit;
         background-color: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 0.85rem;
@@ -351,18 +354,20 @@
 <!-- Top Analytics Header -->
 <div class="analytics-header">
     <div>
-        <h1 id="pageHeadingTitle">🏢 Analisis Kerusakan Berdasarkan Brand Laptop</h1>
-        <p style="color: var(--text-muted);" id="pageHeadingSub">Klik salah satu Brand di bawah untuk melihat statistik detail kerusakan spesifik brand tersebut.</p>
+        <h1 id="pageHeadingTitle">🏢 {{ $selectedBrandId ? 'Analisis Detail Kerusakan Brand: ' . $analytics['active_brand_name'] : 'Analisis Kerusakan Berdasarkan Brand Laptop' }}</h1>
+        <p style="color: var(--text-muted);" id="pageHeadingSub">{{ $selectedBrandId ? 'Menampilkan analisis spesifik frekuensi kerusakan untuk Brand ' . $analytics['active_brand_name'] . '.' : 'Klik salah satu Brand di bawah untuk melihat statistik detail kerusakan spesifik brand tersebut.' }}</p>
     </div>
     <div style="display: flex; gap: 0.5rem;" id="headerActionGroup">
-        <button id="btnBackToOverview" class="btn btn-secondary" style="display: none;" onclick="selectBrand('')">
+        <a id="btnBackToOverview" href="{{ panel_route('analytics.index') }}" class="btn btn-secondary" @if(!$selectedBrandId) style="display: none;" @endif>
             &larr; Kembali ke Overview Brand
-        </button>
+        </a>
     </div>
 </div>
 
+<p id="analyticsStatus" role="status" hidden style="margin-bottom: 1rem; color: var(--text-muted);"></p>
+
 <!-- SECTION 1: OVERVIEW BRAND CARDS GRID (Pilihan Brand Utama) -->
-<div id="overviewBrandSection">
+<div id="overviewBrandSection" @if($selectedBrandId) style="display: none;" @endif>
     <div style="margin-bottom: 1rem; font-weight: 700; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
         <span>Pilih Brand Laptop untuk Analisis Detail:</span>
         <small style="color: var(--text-muted); font-weight: normal;">Total {{ count($analytics['brand_cards']) }} Brand Terdaftar</small>
@@ -370,7 +375,7 @@
 
     <div class="brand-cards-grid">
         @foreach($analytics['brand_cards'] as $bc)
-            <div class="brand-select-card {{ $selectedBrandId == $bc['id'] ? 'active' : '' }}" onclick="selectBrand('{{ $bc['id'] }}')">
+            <a href="{{ panel_route('analytics.index', ['brand_id' => $bc['id']]) }}" data-brand-id="{{ $bc['id'] }}" class="brand-select-card {{ $selectedBrandId == $bc['id'] ? 'active' : '' }}">
                 <div>
                     <div class="brand-card-top">
                         @if($bc['logo_url'])
@@ -397,16 +402,16 @@
                     </div>
                 </div>
 
-                <button class="brand-card-btn">
+                <span class="brand-card-btn">
                     Lihat Detail Kerusakan {{ $bc['nama_brand'] }} &rarr;
-                </button>
-            </div>
+                </span>
+            </a>
         @endforeach
     </div>
 </div>
 
 <!-- SECTION 2: BRAND DETAIL ANALYTICS (Tampil Saat Brand Terpilih) -->
-<div id="brandDetailSection">
+<div id="brandDetailSection" @if(!$selectedBrandId) style="display: none;" @endif>
 
     <!-- Filter Bar untuk Model & Periode Tanggal -->
     <div class="filter-card">
@@ -495,6 +500,7 @@
                 <small style="color: var(--text-muted); font-weight: normal; font-size: 0.8rem;" id="chartSubtitle">Brand: {{ $analytics['active_brand_name'] }}</small>
             </div>
             <div style="position: relative; height: 380px;">
+                <p data-chart-unavailable hidden style="padding: 1rem; color: var(--text-muted);">Grafik belum dapat dimuat. Data kerusakan tetap tersedia pada tabel di bawah.</p>
                 <canvas id="damageBarChart"></canvas>
             </div>
         </div>
@@ -505,6 +511,7 @@
                 <span>🏷️ Kategori (Hardware vs Software)</span>
             </div>
             <div style="position: relative; height: 320px; display: flex; align-items: center; justify-content: center;">
+                <p data-chart-unavailable hidden style="padding: 1rem; color: var(--text-muted);">Grafik belum dapat dimuat. Data kerusakan tetap tersedia pada tabel di bawah.</p>
                 <canvas id="kategoriDonutChart"></canvas>
             </div>
         </div>
@@ -612,39 +619,55 @@
         const initialAnalytics = @json($analytics);
         const brandSelect = document.getElementById('filterBrand');
         const modelSelect = document.getElementById('filterModel');
+        const analyticsStatus = document.getElementById('analyticsStatus');
+        let latestRequest = 0;
+
+        async function loadAnalytics({ page = 1, updateModels = false, scrollToDetails = false } = {}) {
+            const requestId = ++latestRequest;
+            const url = new URL(@json(panel_route('analytics.data')));
+            url.search = new URLSearchParams({
+                brand_id: brandSelect.value,
+                laptop_model_id: modelSelect.value,
+                start_date: document.getElementById('filterStartDate').value,
+                end_date: document.getElementById('filterEndDate').value,
+                page
+            }).toString();
+
+            analyticsStatus.hidden = false;
+            analyticsStatus.setAttribute('role', 'status');
+            analyticsStatus.textContent = 'Memuat analisis...';
+
+            try {
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('Analytics request failed');
+                const result = await response.json();
+                if (!result.success || !result.analytics) throw new Error('Invalid analytics response');
+                if (requestId !== latestRequest) return;
+
+                if (updateModels) {
+                    modelSelect.replaceChildren(new Option('-- Semua Seri/Model --', ''));
+                    (result.laptopModels || []).forEach(model => {
+                        modelSelect.add(new Option(model.seri ? `${model.nama_model} (${model.seri})` : model.nama_model, model.id));
+                    });
+                }
+
+                renderAnalytics(result.analytics);
+                analyticsStatus.hidden = true;
+                if (scrollToDetails) {
+                    document.querySelector('.analytics-header').scrollIntoView({ block: 'start', behavior: 'instant' });
+                }
+            } catch (error) {
+                if (requestId !== latestRequest) return;
+                analyticsStatus.setAttribute('role', 'alert');
+                analyticsStatus.textContent = 'Analisis gagal dimuat. Silakan klik brand atau tombol Filter untuk mencoba lagi.';
+            }
+        }
 
         // Global function to trigger brand selection
         selectBrand = function (brandId) {
             brandSelect.value = brandId;
-            modelSelect.innerHTML = '<option value="">-- Semua Seri/Model --</option>';
-
-            if (brandId) {
-                // Fetch models for selected brand first
-                fetch(`{{ panel_route('analytics.data') }}?brand_id=${brandId}`)
-                    .then(res => res.json())
-                    .then(resData => {
-                        if (resData.laptopModels) {
-                            resData.laptopModels.forEach(m => {
-                                const opt = document.createElement('option');
-                                opt.value = m.id;
-                                opt.innerText = m.seri ? `${m.nama_model} (${m.seri})` : m.nama_model;
-                                modelSelect.appendChild(opt);
-                            });
-                        }
-                        if (resData.analytics) {
-                            renderAnalytics(resData.analytics);
-                        }
-                    });
-            } else {
-                // Return to overview
-                fetch(`{{ panel_route('analytics.data') }}`)
-                    .then(res => res.json())
-                    .then(resData => {
-                        if (resData.analytics) {
-                            renderAnalytics(resData.analytics);
-                        }
-                    });
-            }
+            modelSelect.replaceChildren(new Option('-- Semua Seri/Model --', ''));
+            return loadAnalytics({ updateModels: true, scrollToDetails: true });
         };
 
         // Initialize Horizontal Bar Chart for full text readability
@@ -747,6 +770,8 @@
         // Helper to update charts & DOM
         function renderAnalytics(data) {
             const isBrandSelected = data.active_brand_id != null && data.active_brand_id != '';
+            document.getElementById('overviewBrandSection').style.display = isBrandSelected ? 'none' : '';
+            document.getElementById('brandDetailSection').style.display = isBrandSelected ? '' : 'none';
 
             // Toggle Header & Button
             if (isBrandSelected) {
@@ -761,15 +786,18 @@
 
             // Highlight active card state
             document.querySelectorAll('.brand-select-card').forEach(card => {
-                card.classList.remove('active');
+                card.classList.toggle('active', isBrandSelected && card.dataset.brandId === String(data.active_brand_id));
             });
 
             // KPI Update
             document.getElementById('kpiTotalCases').innerText = data.total_cases;
             document.getElementById('kpiActiveBrand').innerText = data.active_brand_name;
             document.getElementById('kpiActiveModel').innerText = data.active_model_name;
+            document.getElementById('kpiTotalHistories').innerText = data.total_histories;
             
-            const topDamage = data.damage_breakdown.length > 0 ? data.damage_breakdown[0] : null;
+            const rawList = data.damage_breakdown_raw || data.damage_breakdown?.data || [];
+            const allDamages = Array.isArray(rawList) ? rawList : Object.values(rawList);
+            const topDamage = allDamages[0] || null;
             document.getElementById('kpiTopDamageCode').innerText = topDamage ? topDamage.kode_kerusakan : '-';
             document.getElementById('kpiTopDamageName').innerText = topDamage ? topDamage.nama_kerusakan : 'Belum ada data';
 
@@ -779,19 +807,8 @@
             document.getElementById('tableTitleText').innerText = isBrandSelected ? `📋 Detail Kerusakan ${data.active_brand_name}` : '📋 Breakdown Kerusakan System';
 
             // Bar chart data: Top 10 with FULL damage labels (Horizontal bar)
-            const rawList = data.damage_breakdown_raw || data.damage_breakdown || [];
-            const top10Damages = (Array.isArray(rawList) ? rawList : Object.values(rawList)).slice(0, 10);
-            const barLabels = top10Damages.map(item => `[${item.kode_kerusakan}] ${item.nama_kerusakan}`);
-            const barData = top10Damages.map(item => item.total_count);
-            initBarChart(barLabels, barData, top10Damages);
-
-            // Donut chart data
-            const donutLabels = data.kategori_breakdown.map(item => item.kategori_name);
-            const donutData = data.kategori_breakdown.map(item => item.total_count);
-            initDonutChart(donutLabels, donutData);
-
             // Table Subtitle Count
-            const totalDamageCount = rawList.length || 0;
+            const totalDamageCount = allDamages.length;
             document.getElementById('tableSubCount').innerText = `Total ${totalDamageCount} Jenis Kerusakan Terdaftar`;
 
             // Render Table Rows for Active Page
@@ -829,13 +846,45 @@
             }
 
             // Update Native Laravel Pagination HTML (Reused across system)
-            if (data.pagination_html) {
-                document.getElementById('tablePaginationWrap').innerHTML = data.pagination_html;
+            document.getElementById('tablePaginationWrap').innerHTML = data.pagination_html || '';
+
+            // A failed chart dependency must never disable brand navigation or filters.
+            let chartsAvailable = typeof Chart !== 'undefined';
+            if (isBrandSelected && chartsAvailable) {
+                try {
+                    const top10Damages = allDamages.slice(0, 10);
+                    initBarChart(
+                        top10Damages.map(item => `[${item.kode_kerusakan}] ${item.nama_kerusakan}`),
+                        top10Damages.map(item => item.total_count),
+                        top10Damages
+                    );
+                    initDonutChart(
+                        data.kategori_breakdown.map(item => item.kategori_name),
+                        data.kategori_breakdown.map(item => item.total_count)
+                    );
+                } catch (error) {
+                    chartsAvailable = false;
+                }
             }
+            document.querySelectorAll('[data-chart-unavailable]').forEach(message => {
+                message.hidden = chartsAvailable;
+            });
+            document.getElementById('damageBarChart').hidden = !chartsAvailable;
+            document.getElementById('kategoriDonutChart').hidden = !chartsAvailable;
         }
 
-        // Render initial data
-        renderAnalytics(initialAnalytics);
+        document.querySelectorAll('.brand-select-card').forEach(card => {
+            card.addEventListener('click', function (event) {
+                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+                event.preventDefault();
+                selectBrand(this.dataset.brandId);
+            });
+        });
+        document.getElementById('btnBackToOverview').addEventListener('click', function (event) {
+            if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            selectBrand('');
+        });
 
         // Dynamic Brand Change listener -> fetch models
         brandSelect.addEventListener('change', function () {
@@ -844,25 +893,14 @@
 
         // Apply Filter Button
         document.getElementById('btnApplyFilter').addEventListener('click', function () {
-            const brandId   = brandSelect.value;
-            const modelId   = modelSelect.value;
-            const startDate = document.getElementById('filterStartDate').value;
-            const endDate   = document.getElementById('filterEndDate').value;
-
-            fetch(`{{ panel_route('analytics.data') }}?brand_id=${brandId}&laptop_model_id=${modelId}&start_date=${startDate}&end_date=${endDate}`)
-                .then(res => res.json())
-                .then(resData => {
-                    if (resData.success) {
-                        renderAnalytics(resData.analytics);
-                    }
-                });
+            loadAnalytics();
         });
 
         // Reset Filter Button
         document.getElementById('btnResetFilter').addEventListener('click', function () {
-            selectBrand('');
             document.getElementById('filterStartDate').value = '';
             document.getElementById('filterEndDate').value = '';
+            selectBrand('');
         });
 
         // Intercept click on pagination links to prevent page reload & scroll jump to top
@@ -872,25 +910,18 @@
                 e.preventDefault();
 
                 const currentScrollY = window.scrollY;
-                const brandId   = brandSelect.value;
-                const modelId   = modelSelect.value;
-                const startDate = document.getElementById('filterStartDate').value;
-                const endDate   = document.getElementById('filterEndDate').value;
-
                 // Extract page parameter from link URL
                 const urlObj = new URL(link.href);
                 const pageNum = urlObj.searchParams.get('page') || 1;
 
-                fetch(`{{ panel_route('analytics.data') }}?brand_id=${brandId}&laptop_model_id=${modelId}&start_date=${startDate}&end_date=${endDate}&page=${pageNum}`)
-                    .then(res => res.json())
-                    .then(resData => {
-                        if (resData.success) {
-                            renderAnalytics(resData.analytics);
-                            window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-                        }
-                    });
+                loadAnalytics({ page: pageNum }).then(() => {
+                    window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+                });
             }
         });
+
+        // Register controls before rendering optional charts.
+        renderAnalytics(initialAnalytics);
     });
 </script>
 @endsection
